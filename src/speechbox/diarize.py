@@ -7,6 +7,7 @@ from pyannote.audio import Pipeline
 from torchaudio import functional as F
 from transformers import pipeline
 from transformers.pipelines.audio_utils import ffmpeg_read
+from transformers import WhisperProcessor, WhisperForConditionalGeneration
 
 
 class ASRDiarizationPipeline:
@@ -28,15 +29,22 @@ class ASRDiarizationPipeline:
         diarizer_model: Optional[str] = "pyannote/speaker-diarization",
         chunk_length_s: Optional[int] = 30,
         use_auth_token: Optional[Union[str, bool]] = True,
+        translate_lang: Optional[str],
         **kwargs,
     ):
+        processor = WhisperProcessor.from_pretrained(asr_model)
+        forced_decoder_ids = processor.get_decoder_prompt_ids(language=translate_lang, task="transcribe")
+        model = WhisperForConditionalGeneration.from_pretrained(asr_model)
         asr_pipeline = pipeline(
             "automatic-speech-recognition",
-            model=asr_model,
+            model=model,
             chunk_length_s=chunk_length_s,
             use_auth_token=use_auth_token,
+            tokenizer = processor.tokenizer,
+            feature_extractor = processor.feature_extractor,
             **kwargs,
         )
+        asr_pipeline.model.config.forced_decoder_ids = forced_decoder_ids
         diarization_pipeline = Pipeline.from_pretrained(diarizer_model, use_auth_token=use_auth_token)
         return cls(asr_pipeline, diarization_pipeline)
 
