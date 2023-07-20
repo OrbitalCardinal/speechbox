@@ -29,11 +29,10 @@ class ASRDiarizationPipeline:
         diarizer_model: Optional[str] = "pyannote/speaker-diarization",
         chunk_length_s: Optional[int] = 30,
         use_auth_token: Optional[Union[str, bool]] = True,
-        translate_lang: Optional[str],
         **kwargs,
     ):
         processor = WhisperProcessor.from_pretrained(asr_model)
-        forced_decoder_ids = processor.get_decoder_prompt_ids(language=translate_lang, task="transcribe")
+        forced_decoder_ids = processor.get_decoder_prompt_ids(language='es', task="transcribe")
         model = WhisperForConditionalGeneration.from_pretrained(asr_model)
         asr_pipeline = pipeline(
             "automatic-speech-recognition",
